@@ -123,4 +123,18 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Contact Information
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for admin contact information used throughout the application
+    |
+    */
+    'admin_contact' => [
+        'whatsapp' => env('ADMIN_WHATSAPP', '6282283055874'),
+        'whatsapp_display' => env('ADMIN_WHATSAPP_DISPLAY', '+62 822-8305-5874'),
+        'email' => env('ADMIN_EMAIL', 'admin@fismed.unsyiah.ac.id'),
+    ],
+
 ];

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Laboratorium Fisika Medis</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -84,6 +85,43 @@
             width: 100%;
             left: 0;
         }
+        .dropdown {
+            position: relative;
+        }
+        .dropdown-content {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border: 1px solid rgba(0,0,0,0.1);
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .dropdown:hover .dropdown-content {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .dropdown-item {
+            padding: 12px 16px;
+            color: #374151;
+            display: block;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border-radius: 8px;
+            margin: 4px;
+        }
+        .dropdown-item:hover {
+            background: #F3F4F6;
+            color: #10B981;
+            transform: translateX(4px);
+        }
     </style>
 </head>
 <body class="bg-neutral font-inter">
@@ -97,10 +135,26 @@
                 <div id="navbar-menu" class="hidden md:flex space-x-8 text-white">
                     <a href="#home" class="nav-link-underline">Beranda</a>
                     <a href="#about" class="nav-link-underline">Tentang</a>
-                    <a href="#staff" class="nav-link-underline">Staff dan Ahli</a>
-                    <a href="#services" class="nav-link-underline">Layanan</a>
+                    <a href="{{ route('staff')}}" class="nav-link-underline">Staff dan Ahli</a>
+                    <a href="#article" class="nav-link-underline">Artikel</a>
+                    <div class="dropdown">
+                        <a href="#" class="nav-link-underline flex items-center gap-1">
+                            Layanan
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </a>
+                        <div class="dropdown-content">
+                            <a href="{{ route('equipment.rental') }}" class="dropdown-item flex items-center gap-2">
+                                <i class="fas fa-tools text-emerald-500"></i>
+                                Peminjaman Alat
+                            </a>
+                            <a href="{{ route('lab.visit') }}" class="dropdown-item flex items-center gap-2">
+                                <i class="fas fa-microscope text-emerald-500"></i>
+                                Kunjungan Lab
+                            </a>
+                        </div>
+                    </div>
+                    <!-- <a href="#services" class="nav-link-underline">Layanan</a> -->
                     <a href="#gallery" class="nav-link-underline">Galeri</a>
-                    <a href="#contact" class="nav-link-underline">Kontak</a>
                 </div>
                 <button class="md:hidden" id="mobile-menu-button">
                     <i class="fas fa-bars text-2xl text-primary"></i>
@@ -110,10 +164,21 @@
                 <div class="flex flex-col space-y-4 pb-4 text-primary text-sm">
                     <a href="#home" class="nav-link-underline">Beranda</a>
                     <a href="#about" class="nav-link-underline">Tentang</a>
-                    <a href="#staff" class="nav-link-underline">Staff dan Ahli</a>
-                    <a href="#services" class="nav-link-underline">Layanan</a>
+                    <a href="{{ route('staff')}}" class="nav-link-underline">Staff dan Ahli</a>
+                    <a href="#article" class="nav-link-underline">Artikel</a>
+                    <div class="border-l-2 border-emerald-500 pl-4 ml-2">
+                        <p class="text-gray-600 font-semibold mb-2">Layanan</p>
+                        <a href="{{ route('equipment.rental') }}" class="nav-link-underline block mb-2 flex items-center gap-2">
+                            <i class="fas fa-tools text-emerald-500"></i>
+                            Peminjaman Alat
+                        </a>
+                        <a href="{{ route('lab.visit') }}" class="nav-link-underline block flex items-center gap-2">
+                            <i class="fas fa-microscope text-emerald-500"></i>
+                            Kunjungan Lab
+                        </a>
+                    </div>
+                    <!-- <a href="#services" class="nav-link-underline">Layanan</a> -->
                     <a href="#gallery" class="nav-link-underline">Galeri</a>
-                    <a href="#contact" class="nav-link-underline">Kontak</a>
                 </div>
             </div>
         </div>
@@ -123,7 +188,7 @@
         @yield('content')
     </main>
 
-    <footer class="bg-white text-dark py-12">
+    <footer class="bg-white text-dark py-10">
         <div class="container mx-auto px-6">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div>
@@ -139,6 +204,7 @@
                     <ul class="space-y-2">
                         <li><a href="#about" class="hover:text-secondary transition-colors">Tentang</a></li>
                         <li><a href="#staff" class="hover:text-secondary transition-colors">Staff dan Ahli</a></li>
+                        <li><a href="{{ route('article.index') }}" class="hover:text-secondary transition-colors">Artikel</a></li>
                         <li><a href="#services" class="hover:text-secondary transition-colors">Layanan</a></li>
                         <li><a href="#gallery" class="hover:text-secondary transition-colors">Galeri</a></li>
                     </ul>
@@ -221,6 +287,9 @@
         window.addEventListener('scroll', handleNavbarBg);
         window.addEventListener('DOMContentLoaded', handleNavbarBg);
     </script>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
     <script>
       AOS.init({
