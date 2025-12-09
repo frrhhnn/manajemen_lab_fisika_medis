@@ -193,7 +193,7 @@
                         <div class="space-y-4">
                             @foreach($peminjaman->peminjamanItems as $item)
                             <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border">
-                                <img src="{{ $item->alat->image_url ? asset('storage/' . $item->alat->image_url) : asset('images/facilities/default-alat.jpg') }}" 
+                                <img src="{{ $item->alat->image_url }}" 
                                      alt="{{ $item->alat->nama }}" 
                                      class="w-16 h-16 object-cover rounded-lg">
                                 <div class="flex-1">

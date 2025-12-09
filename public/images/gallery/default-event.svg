@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300" fill="#f0f9ff">
+  <rect width="400" height="300" fill="#bae6fd"/>
+  <rect x="60" y="60" width="80" height="60" rx="4" fill="#0ea5e9"/>
+  <rect x="160" y="60" width="80" height="60" rx="4" fill="#0ea5e9"/>
+  <rect x="260" y="60" width="80" height="60" rx="4" fill="#0ea5e9"/>
+  <rect x="60" y="140" width="80" height="60" rx="4" fill="#0ea5e9"/>
+  <rect x="160" y="140" width="80" height="60" rx="4" fill="#0ea5e9"/>
+  <rect x="260" y="140" width="80" height="60" rx="4" fill="#0ea5e9"/>
+  <text x="200" y="270" text-anchor="middle" fill="#0369a1" font-family="Arial, sans-serif" font-size="14" font-weight="500">Default Gallery Image</text>
+</svg>

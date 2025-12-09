@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use App\Helpers\ImageHelper;
 
 class Alat extends Model
 {
@@ -71,5 +72,17 @@ class Alat extends Model
     public function isAvailable($jumlah = 1)
     {
         return $this->jumlah_tersedia >= $jumlah;
+    }
+
+    // Get standardized image URL - IMPROVED for hosting compatibility
+    public function getImageUrlAttribute($value)
+    {
+        return ImageHelper::getImageUrl($value, 'images/facilities/default-alat.jpg');
+    }
+
+    // Get optimized image URL for better performance
+    public function getOptimizedImageUrlAttribute()
+    {
+        return ImageHelper::getImageUrl($this->attributes['image_url'] ?? null, 'images/facilities/default-alat.jpg');
     }
 }

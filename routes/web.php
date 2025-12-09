@@ -5,11 +5,27 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\PublicArticleController;
 use App\Http\Controllers\AlatController;
 use App\Http\Controllers\PeminjamanController;
 use App\Http\Controllers\KunjunganController;
 use App\Http\Controllers\JadwalController;
+// New separated admin controllers
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\EquipmentController;
+use App\Http\Controllers\Admin\StaffController;
+use App\Http\Controllers\Admin\ArticleController as AdminArticleController;
+use App\Http\Controllers\Admin\GalleryController as AdminGalleryController;
+use App\Http\Controllers\Admin\VisionMissionController as AdminVisionMissionController;
+use App\Http\Controllers\Admin\AdminManagementController;
+
+// Model imports for route binding
+use App\Models\BiodataPengurus;
+
+// Route Model Bindings
+Route::bind('pengurus', function ($value) {
+    return BiodataPengurus::findOrFail($value);
+});
 
 Route::get('/', function () {
     return view('landing-page');
@@ -21,9 +37,9 @@ Route::get('/lab-rental', [UserController::class, 'labEquipmentDisplay'])->name(
 Route::get('/lab-visit', [UserController::class, 'labVisitDisplay'])->name('lab-visit');
 Route::get('/vision-mission', [UserController::class, 'getLatestVisionMission'])->name('vision-mission.latest');
 
-// Article Routes
-Route::get('/artikel', [ArticleController::class, 'index'])->name('article.index');
-Route::get('/artikel/{id}', [ArticleController::class, 'show'])->name('article.show');
+// Article Routes (Public)
+Route::get('/artikel', [PublicArticleController::class, 'index'])->name('article.index');
+Route::get('/artikel/{id}', [PublicArticleController::class, 'show'])->name('article.show');
 
 // Equipment & Lab Services Routes
 Route::get('/fasilitas/peminjaman-alat', [UserController::class, 'equipmentRental'])->name('equipment.rental');
@@ -47,6 +63,7 @@ Route::prefix('kunjungan')->name('kunjungan.')->group(function () {
     Route::post('/ajukan', [KunjunganController::class, 'store'])->name('store');
     Route::get('/{kunjungan}/tracking', [KunjunganController::class, 'tracking'])->name('tracking');
     Route::patch('/{kunjungan}/cancel', [KunjunganController::class, 'cancel'])->name('cancel');
+    Route::get('/available-sessions', [JadwalController::class, 'getAvailableSessions'])->name('available-sessions');
 });
 
 // Auth Routes
@@ -60,15 +77,26 @@ Route::middleware(['admin'])->group(function () {
         return redirect('/admin/dashboard');
     });
     
-    Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
     
-    // Alat Management Routes - Integrated with Dashboard
+    // Equipment Management Routes - Now using dedicated controller
+    Route::prefix('admin/equipment')->name('admin.equipment.')->group(function () {
+        Route::get('/', [EquipmentController::class, 'index'])->name('index');
+        Route::post('/', [EquipmentController::class, 'store'])->name('store');
+        Route::put('/{alat}', [EquipmentController::class, 'update'])->name('update');
+        Route::delete('/{alat}', [EquipmentController::class, 'destroy'])->name('destroy');
+        Route::post('/category', [EquipmentController::class, 'categoryStore'])->name('category.store');
+        Route::put('/category/{kategori}', [EquipmentController::class, 'categoryUpdate'])->name('category.update');
+        Route::delete('/category/{kategori}', [EquipmentController::class, 'categoryDestroy'])->name('category.destroy');
+    });
+    
+    // Legacy routes for backward compatibility
     Route::get('/admin/alat', function() {
         return redirect()->route('admin.dashboard');
-    })->name('admin.alat.index'); // Redirect for backward compatibility
-    Route::post('/admin/alat', [AdminController::class, 'alatStore'])->name('admin.alat.store');
-    Route::put('/admin/alat/{alat}', [AdminController::class, 'alatUpdate'])->name('admin.alat.update');
-    Route::delete('/admin/alat/{alat}', [AdminController::class, 'alatDestroy'])->name('admin.alat.destroy');
+    })->name('admin.alat.index');
+    Route::post('/admin/alat', [EquipmentController::class, 'store'])->name('admin.alat.store');
+    Route::put('/admin/alat/{alat}', [EquipmentController::class, 'update'])->name('admin.alat.update');
+    Route::delete('/admin/alat/{alat}', [EquipmentController::class, 'destroy'])->name('admin.alat.destroy');
     
     // Peminjaman Management Routes
     Route::prefix('admin/peminjaman')->name('admin.peminjaman.')->group(function () {
@@ -108,48 +136,92 @@ Route::middleware(['admin'])->group(function () {
         Route::delete('/{id}', [JadwalController::class, 'destroy'])->name('destroy');
     });
     
-    // Staff Management Routes
-    Route::get('/admin/staff', function() {
-        return redirect()->route('admin.dashboard');
-    })->name('admin.staff.index');
-    Route::post('/admin/pengurus', [AdminController::class, 'staffStore'])->name('admin.pengurus.store');
-    Route::get('/admin/pengurus/{pengurus}/edit', [AdminController::class, 'staffEdit'])->name('admin.pengurus.edit');
-    Route::put('/admin/pengurus/{pengurus}', [AdminController::class, 'staffUpdate'])->name('admin.pengurus.update');
-    Route::delete('/admin/pengurus/{pengurus}', [AdminController::class, 'staffDestroy'])->name('admin.pengurus.destroy');
-    
-    // Vision Mission Management Routes
-    Route::get('/admin/vision-mission', [AdminController::class, 'visionMissionIndex'])->name('admin.vision-mission.index');
-    Route::post('/admin/vision-mission', [AdminController::class, 'visionMissionStore'])->name('admin.vision-mission.store');
-    Route::get('/admin/vision-mission/{visionMission}/edit', [AdminController::class, 'visionMissionEdit'])->name('admin.vision-mission.edit');
-    Route::put('/admin/vision-mission/{visionMission}', [AdminController::class, 'visionMissionUpdate'])->name('admin.vision-mission.update');
-    Route::delete('/admin/vision-mission/{visionMission}', [AdminController::class, 'visionMissionDestroy'])->name('admin.vision-mission.destroy');
-    
-    // Article Management Routes
-    Route::prefix('admin/artikel')->name('admin.artikel.')->group(function () {
-        Route::get('/', [AdminController::class, 'artikelIndex'])->name('index');
-        Route::get('/create', [AdminController::class, 'artikelCreate'])->name('create');
-        Route::post('/', [AdminController::class, 'artikelStore'])->name('store');
-        Route::get('/{artikel}', [AdminController::class, 'artikelShow'])->name('show');
-        Route::get('/{artikel}/edit', [AdminController::class, 'artikelEdit'])->name('edit');
-        Route::put('/{artikel}', [AdminController::class, 'artikelUpdate'])->name('update');
-        Route::delete('/{artikel}', [AdminController::class, 'artikelDestroy'])->name('destroy');
+    // Staff Management Routes - Now using dedicated controller
+    Route::prefix('admin/staff')->name('admin.staff.')->group(function () {
+        Route::get('/', [StaffController::class, 'index'])->name('index');
+        Route::post('/', [StaffController::class, 'store'])->name('store');
+        Route::get('/{staff}', [StaffController::class, 'show'])->name('show');
+        Route::get('/{staff}/edit', [StaffController::class, 'edit'])->name('edit');
+        Route::put('/{staff}', [StaffController::class, 'update'])->name('update');
+        Route::delete('/{staff}', [StaffController::class, 'destroy'])->name('destroy');
     });
     
-    // Gallery Management Routes
+    // Legacy routes for backward compatibility
+    Route::post('/admin/pengurus', [StaffController::class, 'store'])->name('admin.pengurus.store');
+    Route::get('/admin/pengurus/{pengurus}/edit', [StaffController::class, 'edit'])->name('admin.pengurus.edit');
+    Route::put('/admin/pengurus/{pengurus}', [StaffController::class, 'update'])->name('admin.pengurus.update');
+    Route::delete('/admin/pengurus/{pengurus}', [StaffController::class, 'destroy'])->name('admin.pengurus.destroy');
+    
+    // Vision Mission Management Routes - Now using dedicated controller
+    Route::prefix('admin/vision-mission')->name('admin.vision-mission.')->group(function () {
+        Route::get('/', [AdminVisionMissionController::class, 'index'])->name('index');
+        Route::post('/', [AdminVisionMissionController::class, 'store'])->name('store');
+        Route::get('/{visionMission}', [AdminVisionMissionController::class, 'show'])->name('show');
+        Route::get('/{visionMission}/edit', [AdminVisionMissionController::class, 'edit'])->name('edit');
+        Route::put('/{visionMission}', [AdminVisionMissionController::class, 'update'])->name('update');
+        Route::delete('/{visionMission}', [AdminVisionMissionController::class, 'destroy'])->name('destroy');
+    });
+    
+    // Article Management Routes - Now using dedicated admin controller
+    Route::prefix('admin/articles')->name('admin.articles.')->group(function () {
+        Route::get('/', [AdminArticleController::class, 'index'])->name('index');
+        Route::get('/create', [AdminArticleController::class, 'create'])->name('create');
+        Route::post('/', [AdminArticleController::class, 'store'])->name('store');
+        Route::get('/{article}', [AdminArticleController::class, 'show'])->name('show');
+        Route::get('/{article}/edit', [AdminArticleController::class, 'edit'])->name('edit');
+        Route::put('/{article}', [AdminArticleController::class, 'update'])->name('update');
+        Route::delete('/{article}', [AdminArticleController::class, 'destroy'])->name('destroy');
+        Route::delete('/image/{gambar}', [AdminArticleController::class, 'deleteImage'])->name('delete-image');
+    });
+    
+    // Legacy routes for backward compatibility
+    Route::prefix('admin/artikel')->name('admin.artikel.')->group(function () {
+        Route::get('/', function() { return redirect()->route('admin.dashboard'); })->name('index');
+        Route::get('/create', function() { return redirect()->route('admin.dashboard'); })->name('create');
+        Route::post('/', [AdminArticleController::class, 'store'])->name('store');
+        Route::get('/{artikel}', function() { return redirect()->route('admin.dashboard'); })->name('show');
+        Route::get('/{artikel}/edit', function() { return redirect()->route('admin.dashboard'); })->name('edit');
+        Route::put('/{artikel}', [AdminArticleController::class, 'update'])->name('update');
+        Route::delete('/{artikel}', [AdminArticleController::class, 'destroy'])->name('destroy');
+    });
+    
+    // Gallery Management Routes - Now using dedicated controller
+    Route::prefix('admin/gallery')->name('admin.gallery.')->group(function () {
+        Route::get('/', [AdminGalleryController::class, 'index'])->name('index');
+        Route::post('/', [AdminGalleryController::class, 'store'])->name('store');
+        Route::get('/{gambar}', [AdminGalleryController::class, 'show'])->name('show');
+        Route::get('/{gambar}/edit', [AdminGalleryController::class, 'edit'])->name('edit');
+        Route::put('/{gambar}', [AdminGalleryController::class, 'update'])->name('update');
+        Route::delete('/{gambar}', [AdminGalleryController::class, 'destroy'])->name('destroy');
+        Route::post('/{gambar}/toggle-visibility', [AdminGalleryController::class, 'toggleVisibility'])->name('toggle-visibility');
+    });
+    
+    // Legacy gallery routes for backward compatibility
     Route::prefix('admin/galeri')->name('admin.galeri.')->group(function () {
-        Route::get('/', [AdminController::class, 'galeriIndex'])->name('index');
-        Route::post('/', [AdminController::class, 'galeriStore'])->name('store');
-        Route::get('/{gambar}/edit', [AdminController::class, 'galeriEdit'])->name('edit');
-        Route::post('/{gambar}', [AdminController::class, 'galeriUpdate'])->name('update'); // Changed to POST
-        Route::put('/{gambar}', [AdminController::class, 'galeriUpdate'])->name('update-put'); // Keep PUT for compatibility
-        Route::delete('/{gambar}', [AdminController::class, 'galeriDestroy'])->name('destroy');
-        Route::post('/{gambar}/toggle-visibility', [AdminController::class, 'galeriToggleVisibility'])->name('toggle-visibility');
+        Route::get('/', function() { return redirect()->route('admin.dashboard'); })->name('index');
+        Route::post('/', [AdminGalleryController::class, 'store'])->name('store');
+        Route::get('/{gambar}/edit', [AdminGalleryController::class, 'edit'])->name('edit');
+        Route::post('/{gambar}', [AdminGalleryController::class, 'update'])->name('update');
+        Route::put('/{gambar}', [AdminGalleryController::class, 'update'])->name('update-put');
+        Route::delete('/{gambar}', [AdminGalleryController::class, 'destroy'])->name('destroy');
+        Route::post('/{gambar}/toggle-visibility', [AdminGalleryController::class, 'toggleVisibility'])->name('toggle-visibility');
     });
 
-    // Admin Management Routes (Only for Super Admin)
+    // Admin Management Routes - Now using dedicated controller (Only for Super Admin)
+    Route::prefix('admin/admin-management')->name('admin.admin-management.')->group(function () {
+        Route::get('/', [AdminManagementController::class, 'index'])->name('index');
+        Route::post('/', [AdminManagementController::class, 'store'])->name('store');
+        Route::get('/{admin}', [AdminManagementController::class, 'show'])->name('show');
+        Route::get('/{admin}/edit', [AdminManagementController::class, 'edit'])->name('edit');
+        Route::put('/{admin}', [AdminManagementController::class, 'update'])->name('update');
+        Route::delete('/{admin}', [AdminManagementController::class, 'destroy'])->name('destroy');
+        Route::post('/{admin}/reset-password', [AdminManagementController::class, 'resetPassword'])->name('reset-password');
+    });
+    
+    // Legacy admin management routes for backward compatibility
     Route::middleware(['super_admin'])->prefix('admin/admins')->name('admin.admins.')->group(function () {
-        Route::post('/', [AdminController::class, 'adminStore'])->name('store');
-        Route::put('/{admin}', [AdminController::class, 'adminUpdate'])->name('update');
-        Route::delete('/{admin}', [AdminController::class, 'adminDestroy'])->name('destroy');
+        Route::post('/', [AdminManagementController::class, 'store'])->name('store');
+        Route::put('/{admin}', [AdminManagementController::class, 'update'])->name('update');
+        Route::delete('/{admin}', [AdminManagementController::class, 'destroy'])->name('destroy');
     });
 });

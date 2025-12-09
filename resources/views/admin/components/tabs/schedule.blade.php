@@ -91,7 +91,7 @@
             <div class="bg-gradient-to-r from-gray-400 to-gray-600 w-1 h-8 rounded-full mr-4"></div>
             <h3 class="text-xl font-bold text-gray-800">Keterangan Status</h3>
         </div>
-        <div class="grid grid-cols-2 lg:grid-cols-5 gap-6">
+        <div class="grid grid-cols-2 lg:grid-cols-6 gap-6">
             <div class="flex items-center space-x-3 p-3 rounded-xl bg-green-50 border border-green-200">
                 <div class="w-5 h-5 bg-green-500 rounded-full shadow-sm"></div>
                 <span class="font-medium text-gray-700">Tersedia</span>
@@ -111,6 +111,10 @@
             <div class="flex items-center space-x-3 p-3 rounded-xl bg-yellow-50 border border-yellow-200">
                 <div class="w-5 h-5 bg-yellow-500 rounded-full shadow-sm"></div>
                 <span class="font-medium text-gray-700">Selesai (✓)</span>
+            </div>
+            <div class="flex items-center space-x-3 p-3 rounded-xl bg-red-100 border border-red-300">
+                <div class="w-5 h-5 bg-red-400 rounded-full shadow-sm"></div>
+                <span class="font-medium text-gray-700">Libur (Minggu)</span>
             </div>
         </div>
     </div>
@@ -206,6 +210,17 @@
 
 .today-cell:hover {
     background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+.sunday-cell {
+    background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important;
+    color: white !important;
+    cursor: default !important;
+}
+
+.sunday-cell:hover {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    transform: none !important;
 }
 
 .schedule-item {
@@ -601,8 +616,41 @@ function createCalendarDay(day) {
     const div = document.createElement('div');
     div.className = `calendar-cell bg-white border border-gray-200 rounded-2xl cursor-pointer relative overflow-hidden ${day.isPast ? 'past-day' : ''}`;
     
+    // Check if it's Sunday (0 = Sunday)
+    const dayOfWeek = new Date(day.date).getDay();
+    const isSunday = dayOfWeek === 0;
+    
     if (day.isToday) {
         div.classList.add('today-cell');
+    }
+    
+    // Special handling for Sunday
+    if (isSunday) {
+        div.classList.add('sunday-cell');
+        div.style.background = 'linear-gradient(135deg, #f87171 0%, #ef4444 100%)';
+        div.style.color = 'white';
+        div.onclick = null; // Disable click for Sunday
+        div.style.cursor = 'default';
+        
+        // Day number for Sunday
+        const dayNumber = document.createElement('div');
+        dayNumber.className = 'day-number text-white';
+        dayNumber.textContent = day.day;
+        div.appendChild(dayNumber);
+        
+        // Sunday label
+        const sundayLabel = document.createElement('div');
+        sundayLabel.className = 'absolute inset-0 flex items-center justify-center pt-8';
+        sundayLabel.innerHTML = `
+            <div class="text-center">
+                <i class="fas fa-sun text-2xl mb-2 text-yellow-200"></i>
+                <div class="text-sm font-bold">HARI MINGGU</div>
+                <div class="text-xs opacity-90">Libur</div>
+            </div>
+        `;
+        div.appendChild(sundayLabel);
+        
+        return div;
     }
     
     div.onclick = () => openScheduleModal(day.date);
@@ -726,6 +774,23 @@ function updateStats() {
 }
 
 function openScheduleModal(date) {
+    // Check if it's Sunday
+    const dayOfWeek = new Date(date).getDay();
+    if (dayOfWeek === 0) {
+        // Show notification for Sunday
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'info',
+                title: 'Hari Minggu',
+                text: 'Laboratorium libur pada hari Minggu. Tidak ada jadwal kunjungan yang tersedia.',
+                confirmButtonColor: '#ef4444'
+            });
+        } else {
+            alert('Laboratorium libur pada hari Minggu. Tidak ada jadwal kunjungan yang tersedia.');
+        }
+        return;
+    }
+    
     selectedDate = date;
     document.getElementById('modal-date').textContent = formatDate(date);
     

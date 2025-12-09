@@ -212,23 +212,33 @@
 
 <!-- Visit Detail Modal -->
 <div id="visitDetailModal" class="fixed inset-0 z-50 overflow-y-auto hidden">
-    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-        </div>
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Background overlay -->
+        <div class="fixed inset-0 transition-opacity bg-black/50 backdrop-blur-sm" onclick="closeVisitDetailModal()"></div>
 
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-medium text-gray-900">Detail Kunjungan</h3>
-                    <button onclick="closeVisitDetailModal()" class="text-gray-400 hover:text-gray-600">
+        <!-- Modal content -->
+        <div class="inline-block w-full max-w-4xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-emerald-500 to-emerald-600 px-6 py-4 text-white">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-white/20 rounded-lg">
+                            <i class="fas fa-users text-white text-lg"></i>
+                        </div>
+                        <h3 class="text-xl font-bold">Detail Kunjungan</h3>
+                    </div>
+                    <button onclick="closeVisitDetailModal()" class="text-white hover:text-gray-200 transition-colors p-1 rounded-full hover:bg-white/10">
                         <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
-                <div id="visitDetailContent">
-                    <!-- Content will be loaded here -->
+            </div>
+
+            <!-- Modal Body -->
+            <div id="visitDetailContent" class="p-6">
+                <!-- Content will be loaded here -->
+                <div class="text-center py-12">
+                    <i class="fas fa-spinner fa-spin text-4xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500">Memuat detail...</p>
                 </div>
             </div>
         </div>

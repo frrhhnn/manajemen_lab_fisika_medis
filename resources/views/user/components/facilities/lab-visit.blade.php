@@ -153,7 +153,9 @@
                                     <label for="tanggal" class="block text-sm font-medium text-gray-700 mb-2">Tanggal Kunjungan *</label>
                                     <input type="date" id="tanggal" name="tanggal" value="{{ old('tanggal') }}" required
                                            min="{{ date('Y-m-d') }}"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                           onkeydown="return false;">
+                                    <p class="text-xs text-gray-500 mt-1">Kunjungan tidak dapat dilakukan pada hari Minggu</p>
                                 </div>
                                 
                                 <div>
@@ -234,81 +236,198 @@ document.addEventListener('DOMContentLoaded', function() {
     const today = new Date().toISOString().split('T')[0];
     tanggalInput.min = today;
 
+    // Function to check if date is Sunday
+    function isSunday(dateString) {
+        const date = new Date(dateString);
+        return date.getDay() === 0;
+    }
+
+    // Function to show notification
+    function showNotification(message, type = 'error') {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-emerald-500' : 'bg-red-500'} text-white`;
+        notification.innerHTML = `
+            <div class="flex items-center">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} mr-2"></i>
+                ${message}
+            </div>
+        `;
+
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 4000);
+    }
+
+    // Function to validate date selection
+    function validateDateSelection(input) {
+        const selectedDate = input.value;
+        if (selectedDate && isSunday(selectedDate)) {
+            input.value = '';
+            showNotification('Kunjungan tidak dapat dilakukan pada hari Minggu! Silakan pilih hari lain.', 'error');
+            // Clear time slots when date is invalid
+            waktuKunjunganSelect.innerHTML = '<option value="">Pilih slot waktu kunjungan</option>';
+            return false;
+        }
+        return true;
+    }
+
+    // Function to disable Sundays in date picker
+    function disableSundays() {
+        // Set date change event to validate
+        tanggalInput.addEventListener('input', function(e) {
+            const selectedDate = e.target.value;
+            if (selectedDate && isSunday(selectedDate)) {
+                e.target.value = '';
+                showNotification('Kunjungan tidak dapat dilakukan pada hari Minggu!', 'error');
+                waktuKunjunganSelect.innerHTML = '<option value="">Pilih slot waktu kunjungan</option>';
+            }
+        });
+
+        // Override the date picker to disable Sundays using CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            input[type="date"]::-webkit-calendar-picker-indicator {
+                filter: invert(0.5);
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Add event listener to prevent Sunday selection via keyboard
+        tanggalInput.addEventListener('keydown', function(e) {
+            // Allow navigation keys
+            const allowedKeys = ['Tab', 'Escape', 'Enter', 'Home', 'End', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown'];
+            if (allowedKeys.includes(e.key)) {
+                return;
+            }
+            // Block all other keys to prevent manual typing
+            e.preventDefault();
+        });
+    }
+
     function populateTimeSlots() {
+        const selectedDate = tanggalInput.value;
+        
+        // Clear existing options
         waktuKunjunganSelect.innerHTML = '<option value="">Pilih slot waktu kunjungan</option>';
 
-        const selectedDate = tanggalInput.value;
         if (!selectedDate) return;
+
+        // Validate date is not Sunday before proceeding
+        if (!validateDateSelection(tanggalInput)) {
+            return;
+        }
 
         // Show loading state
         waktuKunjunganSelect.innerHTML = '<option value="">Memuat jadwal tersedia...</option>';
+        waktuKunjunganSelect.disabled = true;
+
+        // Get CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
         // Fetch available sessions for the selected date
-        fetch(`/admin/jadwal/available-sessions?date=${selectedDate}`)
-            .then(response => response.json())
-            .then(data => {
-                waktuKunjunganSelect.innerHTML = '<option value="">Pilih slot waktu kunjungan</option>';
-                
-                if (data.available_sessions && data.available_sessions.length > 0) {
-                    data.available_sessions.forEach(session => {
-                        const option = document.createElement('option');
-                        option.value = `${session.jamMulai}-${session.jamSelesai}`;
-                        option.textContent = session.time;
-                        waktuKunjunganSelect.appendChild(option);
-                    });
-                } else {
+        fetch(`/kunjungan/available-sessions?date=${selectedDate}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken || ''
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            waktuKunjunganSelect.innerHTML = '<option value="">Pilih slot waktu kunjungan</option>';
+            waktuKunjunganSelect.disabled = false;
+            
+            console.log('Received data:', data); // Debug log
+            
+            if (data.available_sessions && data.available_sessions.length > 0) {
+                data.available_sessions.forEach(session => {
                     const option = document.createElement('option');
-                    option.value = '';
-                    option.textContent = 'Tidak ada slot tersedia untuk tanggal ini';
-                    option.disabled = true;
+                    option.value = session.waktuKunjungan || `${session.jamMulai}-${session.jamSelesai}`;
+                    option.textContent = session.time || `${session.jamMulai} - ${session.jamSelesai}`;
                     waktuKunjunganSelect.appendChild(option);
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching available sessions:', error);
-                waktuKunjunganSelect.innerHTML = '<option value="">Error memuat jadwal - coba lagi</option>';
-            });
+                });
+                
+                showNotification(`${data.available_sessions.length} slot waktu tersedia untuk tanggal ${selectedDate}`, 'success');
+            } else {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Tidak ada slot tersedia untuk tanggal ini';
+                option.disabled = true;
+                waktuKunjunganSelect.appendChild(option);
+                
+                showNotification('Tidak ada slot waktu tersedia untuk tanggal yang dipilih', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching available sessions:', error);
+            waktuKunjunganSelect.innerHTML = '<option value="">Error memuat jadwal - coba lagi</option>';
+            waktuKunjunganSelect.disabled = false;
+            showNotification('Gagal memuat jadwal. Silakan coba lagi.', 'error');
+        });
     }
 
     // Event listeners
-    tanggalInput.addEventListener('change', populateTimeSlots);
+    tanggalInput.addEventListener('change', function() {
+        // Double check for Sunday validation
+        if (this.value && isSunday(this.value)) {
+            this.value = '';
+            showNotification('Kunjungan tidak dapat dilakukan pada hari Minggu!', 'error');
+            waktuKunjunganSelect.innerHTML = '<option value="">Pilih slot waktu kunjungan</option>';
+            return;
+        }
+        populateTimeSlots();
+    });
+    
+    // Initialize Sunday blocking
+    disableSundays();
 
     // Initialize if date is already selected
     if (tanggalInput.value) {
-        populateTimeSlots();
+        if (!isSunday(tanggalInput.value)) {
+            populateTimeSlots();
+        } else {
+            tanggalInput.value = '';
+            showNotification('Tanggal yang dipilih adalah hari Minggu. Silakan pilih hari lain.', 'error');
+        }
     }
 
-    // Setup CSRF token for AJAX requests
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    if (csrfToken) {
-        // Set up axios or fetch default headers
-        window.Laravel = { csrfToken: csrfToken };
-    }
-
-    // Debug form submission
+    // Form submission validation
     const form = document.getElementById('kunjunganForm');
     if (form) {
         form.addEventListener('submit', function(e) {
             console.log('Form submitting...');
-            console.log('CSRF Token (form):', document.querySelector('input[name="_token"]')?.value);
-            console.log('CSRF Token (meta):', csrfToken);
-            console.log('Waktu Kunjungan:', waktuKunjunganSelect.value);
-            console.log('Form action:', form.action);
-            console.log('Form method:', form.method);
             
-            // Validate required fields
-            if (!waktuKunjunganSelect.value) {
+            // Validate date is not Sunday
+            const selectedDate = tanggalInput.value;
+            if (!selectedDate) {
                 e.preventDefault();
-                alert('Silakan pilih waktu kunjungan terlebih dahulu');
+                showNotification('Silakan pilih tanggal kunjungan terlebih dahulu!', 'error');
                 return false;
             }
             
-            // Log all form data
-            const formData = new FormData(form);
-            console.log('Form data:');
-            for (let [key, value] of formData.entries()) {
-                console.log(key, ':', value);
+            if (isSunday(selectedDate)) {
+                e.preventDefault();
+                tanggalInput.value = '';
+                showNotification('Kunjungan tidak dapat dilakukan pada hari Minggu!', 'error');
+                return false;
             }
+            
+            // Validate time slot is selected
+            if (!waktuKunjunganSelect.value) {
+                e.preventDefault();
+                showNotification('Silakan pilih waktu kunjungan terlebih dahulu!', 'error');
+                waktuKunjunganSelect.focus();
+                return false;
+            }
+            
+            console.log('Form validation passed, submitting...');
+            console.log('Selected date:', selectedDate);
+            console.log('Selected time:', waktuKunjunganSelect.value);
         });
     }
 });

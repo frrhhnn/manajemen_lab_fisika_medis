@@ -64,8 +64,14 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pt-4">
             @forelse(\App\Models\BiodataPengurus::orderBy('nama')->get() as $member)
             <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                <img src="{{ $member->image_url }}" alt="{{ $member->nama }}"
-                     class="w-full h-72 object-cover">
+                <x-image.optimized
+                    :src="$member->image_url"
+                    :alt="$member->nama"
+                    class="w-full h-72"
+                    object-fit="cover"
+                    :rounded="false"
+                    :shadow="false"
+                />
                 <div class="p-4">
                     <h3 class="font-semibold text-sm text-gray-900 mb-1">{{ $member->nama }}</h3>
                     <p class="text-xs text-gray-600 mb-3">{{ $member->jabatan }}</p>

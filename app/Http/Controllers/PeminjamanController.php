@@ -59,8 +59,28 @@ class PeminjamanController extends Controller
             'npm_nim' => 'nullable|string|max:20',
             'noHp' => 'required|string|max:20',
             'tujuanPeminjaman' => 'nullable|string',
-            'tanggal_pinjam' => 'required|date|after_or_equal:today',
-            'tanggal_pengembalian' => 'required|date|after:tanggal_pinjam',
+            'tanggal_pinjam' => [
+                'required',
+                'date',
+                'after_or_equal:today',
+                function ($attribute, $value, $fail) {
+                    $dayOfWeek = \Carbon\Carbon::parse($value)->dayOfWeek;
+                    if ($dayOfWeek === 0 || $dayOfWeek === 6) {
+                        $fail('Tanggal peminjaman tidak boleh pada hari Minggu atau hari libur.');
+                    }
+                }
+            ],
+            'tanggal_pengembalian' => [
+                'required',
+                'date',
+                'after:tanggal_pinjam',
+                function ($attribute, $value, $fail) {
+                    $dayOfWeek = \Carbon\Carbon::parse($value)->dayOfWeek;
+                    if ($dayOfWeek === 0 || $dayOfWeek === 6) {
+                        $fail('Tanggal pengembalian tidak boleh pada hari Minggu atau hari libur.');
+                    }
+                }
+            ],
             'items' => 'required|array|min:1',
             'items.*.alat_id' => 'required|exists:alat,id',
             'items.*.jumlah' => 'required|integer|min:1',

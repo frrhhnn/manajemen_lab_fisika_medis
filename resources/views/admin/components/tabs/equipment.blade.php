@@ -238,7 +238,7 @@
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
                                 <div class="h-12 w-12 flex-shrink-0">
-                                    <img class="h-12 w-12 rounded-lg object-cover" src="{{ $alat->image_url ? asset('storage/' . $alat->image_url) : asset('images/facilities/default-alat.jpg') }}" alt="{{ $alat->nama }}">
+                                    <img class="h-12 w-12 rounded-lg object-cover" src="{{ $alat->image_url }}" alt="{{ $alat->nama }}">
                                 </div>
                                 <div class="ml-4">
                                     <div class="text-sm font-medium text-gray-900">{{ $alat->nama }}</div>

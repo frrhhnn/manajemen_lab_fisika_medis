@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Admin Dashboard - Laboratorium Fisika Medis</title>
+    <title>@yield('title', 'Admin Dashboard') - Laboratorium Fisika Medis</title>
     
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -24,6 +24,28 @@
     
     <!-- Custom Styles -->
     <link rel="stylesheet" href="{{ asset('css/admin-dashboard.css') }}">
+    
+    <!-- SweetAlert2 Custom Styles -->
+    <style>
+        .swal-btn-confirm {
+            background-color: #dc2626 !important;
+            border-color: #dc2626 !important;
+        }
+        .swal-btn-confirm:hover {
+            background-color: #b91c1c !important;
+            border-color: #b91c1c !important;
+        }
+        .swal-btn-cancel {
+            background-color: #6b7280 !important;
+            border-color: #6b7280 !important;
+        }
+        .swal-btn-cancel:hover {
+            background-color: #4b5563 !important;
+            border-color: #4b5563 !important;
+        }
+    </style>
+    
+    @yield('head')
 </head>
 <body class="bg-gray-50" x-data="{ 
     currentTab: 'dashboard',
@@ -34,15 +56,16 @@
     showNotifications: false
 }">
     <!-- Mobile Sidebar Overlay -->
-    <div x-show="sidebarOpen" 
-         x-transition:enter="transition-opacity ease-linear duration-300"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition-opacity ease-linear duration-300"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         @click="sidebarOpen = false"
-         class="fixed inset-0 bg-gray-600 bg-opacity-75 z-40 lg:hidden"></div>
+    <div 
+      x-show="sidebarOpen" 
+      x-transition:enter="transition-opacity ease-linear duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition-opacity ease-linear duration-300"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"
+      @click="sidebarOpen = false"
+      class="fixed inset-0 bg-gray-600 bg-opacity-75 z-40 lg:hidden"></div>
 
     <!-- Include Sidebar -->
     @include('admin.components.layout.sidebar')
@@ -54,6 +77,8 @@
 
         <!-- Content Area -->
         <main class="p-6 bg-gray-50 min-h-screen">
+            @yield('content')
+
             <!-- Dashboard Tab -->
             <div id="dashboard-tab" class="tab-content" x-show="currentTab === 'dashboard'" x-transition>
                 @include('admin.components.tabs.dashboard')
@@ -171,6 +196,29 @@
     <!-- Scripts -->
     <script src="{{ asset('js/admin-dashboard.js') }}"></script>
     
+    <!-- SweetAlert for Session Messages -->
+    @if(session('success'))
+    <script>
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil!',
+          text: @json(session('success')),
+          confirmButtonColor: '#10b981'
+        });
+    </script>
+    @endif
+
+    @if(session('error'))
+    <script>
+        Swal.fire({
+          icon: 'error',
+          title: 'Oops...',
+          text: @json(session('error')),
+          confirmButtonColor: '#10b981'
+        });
+    </script>
+    @endif
+    
     <!-- Mobile Sidebar Script -->
     <script>
         // Ensure sidebar functionality works on mobile
@@ -189,5 +237,45 @@
             });
         });
     </script>
+    
+    <!-- Logout Confirmation Script -->
+    <script>
+        function confirmLogout() {
+            Swal.fire({
+                title: 'Konfirmasi Logout',
+                text: 'Apakah Anda yakin ingin keluar dari sistem?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Ya, Logout',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                customClass: {
+                    confirmButton: 'swal-btn-confirm',
+                    cancelButton: 'swal-btn-cancel'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Show loading
+                    Swal.fire({
+                        title: 'Logging out...',
+                        text: 'Mohon tunggu sebentar',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    
+                    // Submit logout form
+                    document.getElementById('logout-form').submit();
+                }
+            });
+        }
+    </script>
+    
+    @stack('scripts')
 </body>
 </html>

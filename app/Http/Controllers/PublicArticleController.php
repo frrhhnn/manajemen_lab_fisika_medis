@@ -6,7 +6,7 @@ use App\Models\Artikel;
 use App\Models\Gambar;
 use Illuminate\Http\Request;
 
-class ArticleController extends Controller
+class PublicArticleController extends Controller
 {
     /**
      * Display a listing of the articles.

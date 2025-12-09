@@ -5,13 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
+use App\Helpers\ImageHelper;
 
 class BiodataPengurus extends Model
 {
     use HasFactory;
 
-    protected $table = 'biodataPengurus';
+    protected $table = 'biodatapengurus';
     
     protected $keyType = 'string';
     public $incrementing = false;
@@ -46,9 +46,20 @@ class BiodataPengurus extends Model
     {
         $gambar = $this->fotoPengurus;
         if ($gambar) {
-                    // Gunakan fullUrl dari model Gambar untuk konsistensi
-        return $gambar->fullUrl;
+            // Use the improved fullUrl from Gambar model
+            return $gambar->fullUrl;
         }
-        return asset('images/pengurus/default-pengurus.png');
+        // Use ImageHelper for consistent default image handling
+        return ImageHelper::getImageUrl(null, 'images/staff/default-staff.svg');
+    }
+
+    // Get optimized image URL for better performance
+    public function getOptimizedImageUrlAttribute()
+    {
+        $gambar = $this->fotoPengurus;
+        if ($gambar) {
+            return $gambar->optimizedUrl;
+        }
+        return ImageHelper::getImageUrl(null, 'images/staff/default-staff.svg');
     }
 }

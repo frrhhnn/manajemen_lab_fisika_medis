@@ -160,12 +160,12 @@
                          data-equipment-id="{{ $alat->id }}"
                          data-equipment-name="{{ $alat->nama ?? 'Nama tidak tersedia' }}"
                          data-equipment-code="{{ $alat->kode ?? '-' }}"
-                         data-equipment-image="{{ $alat->image_url ? asset('storage/' . $alat->image_url) : asset('images/facilities/default-alat.jpg') }}"
+                         data-equipment-image="{{ $alat->image_url }}"
                          data-equipment-available="{{ $alat->jumlah_tersedia ?? 0 }}"
                          data-aos="fade-up">
                         <!-- Equipment Image -->
                         <div class="relative overflow-hidden h-40 md:h-48">
-                            <img src="{{ $alat->image_url ? asset('storage/' . $alat->image_url) : asset('images/facilities/default-alat.jpg') }}" 
+                            <img src="{{ $alat->image_url }}" 
                                  alt="{{ $alat->nama ?? 'Gambar alat' }}" 
                                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
                             <div class="absolute top-4 left-4">
@@ -263,7 +263,7 @@
                                         }
                                     @endphp
                                     
-                                    <button onclick="addToCartFromCard('{{ $alat->id }}', '{{ $alat->nama }}', '{{ $alat->kode ?: '-' }}', '{{ $alat->image_url ? asset('storage/' . $alat->image_url) : asset('images/facilities/default-alat.jpg') }}', {{ $alat->jumlah_tersedia }})"
+                                    <button onclick="addToCartFromCard('{{ $alat->id }}', '{{ $alat->nama }}', '{{ $alat->kode ?: '-' }}', '{{ $alat->image_url }}', {{ $alat->jumlah_tersedia }})"
                                             {{ !$canAddToCart ? 'disabled' : '' }}
                                             class="add-to-cart-btn {{ $buttonClass }} py-3 rounded-xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-sm">
                                         <i class="fas fa-plus"></i>
@@ -1076,18 +1076,46 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 100);
 
-    // Set up date constraints
+    // Set up date constraints with Sunday validation
     const today = new Date().toISOString().split('T')[0];
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowString = tomorrow.toISOString().split('T')[0];
+
+    // Function to check if date is Sunday
+    function isSunday(dateString) {
+        const date = new Date(dateString);
+        return date.getDay() === 0;
+    }
+
+    // Function to show date validation message
+    function showDateValidationMessage(message, type = 'error') {
+        showNotification(message, type);
+    }
+
+    // Function to validate date selection
+    function validateDateSelection(input, action = 'peminjaman') {
+        const selectedDate = input.value;
+        if (selectedDate && isSunday(selectedDate)) {
+            input.value = '';
+            showDateValidationMessage(`${action} tidak dapat dilakukan pada hari Minggu!`, 'error');
+            return false;
+        }
+        return true;
+    }
 
     const pinjamDate = document.querySelector('input[name="tanggal_pinjam"]');
     const kembaliDate = document.querySelector('input[name="tanggal_pengembalian"]');
 
     if (pinjamDate) {
         pinjamDate.min = today;
+        
+        // Add Sunday validation for pinjam date
         pinjamDate.addEventListener('change', function() {
+            if (!validateDateSelection(this, 'Tanggal peminjaman')) {
+                return;
+            }
+            
             if (kembaliDate) {
                 kembaliDate.min = this.value;
                 if (kembaliDate.value && kembaliDate.value <= this.value) {
@@ -1097,10 +1125,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
+
+        // Add input event listener for real-time validation
+        pinjamDate.addEventListener('input', function() {
+            validateDateSelection(this, 'Tanggal peminjaman');
+        });
     }
 
     if (kembaliDate) {
         kembaliDate.min = tomorrowString;
+        
+        // Add Sunday validation for kembali date
+        kembaliDate.addEventListener('change', function() {
+            validateDateSelection(this, 'Tanggal pengembalian');
+        });
+
+        // Add input event listener for real-time validation
+        kembaliDate.addEventListener('input', function() {
+            validateDateSelection(this, 'Tanggal pengembalian');
+        });
     }
 
     // Handle NPM/NIM field visibility
@@ -1143,6 +1186,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Cart is empty, preventing submission');
                 e.preventDefault();
                 alert('Keranjang masih kosong');
+                return;
+            }
+
+            // Validate dates are not Sunday
+            const tanggalPinjam = this.querySelector('input[name="tanggal_pinjam"]').value;
+            const tanggalKembali = this.querySelector('input[name="tanggal_pengembalian"]').value;
+            
+            if (tanggalPinjam && isSunday(tanggalPinjam)) {
+                e.preventDefault();
+                showDateValidationMessage('Tanggal peminjaman tidak boleh pada hari Minggu!', 'error');
+                return;
+            }
+            
+            if (tanggalKembali && isSunday(tanggalKembali)) {
+                e.preventDefault();
+                showDateValidationMessage('Tanggal pengembalian tidak boleh pada hari Minggu!', 'error');
                 return;
             }
             

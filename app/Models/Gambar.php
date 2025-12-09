@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use App\Helpers\ImageHelper;
 
 class Gambar extends Model
 {
@@ -89,16 +90,29 @@ class Gambar extends Model
         return $query->where('isVisible', false);
     }
 
-    // Get full URL untuk gambar
+    // Get full URL untuk gambar - IMPROVED for hosting compatibility
     public function getFullUrlAttribute()
     {
-        // Jika URL sudah berupa full URL (http/https), return as is
-        if (str_starts_with($this->url, 'http')) {
-            return $this->url;
-        }
-        
-        // Jika URL berupa path relatif, convert ke full URL
-        return asset($this->url);
+        $defaultImage = $this->getDefaultImageByCategory();
+        return ImageHelper::getImageUrl($this->url, $defaultImage);
+    }
+
+    // Get default image based on category
+    private function getDefaultImageByCategory()
+    {
+        $defaults = [
+            'PENGURUS' => 'images/staff/default-staff.svg',
+            'ACARA' => 'images/gallery/default-event.svg',
+            'FASILITAS' => 'images/equipment/default-equipment.svg'
+        ];
+
+        return $defaults[$this->kategori] ?? 'images/default/placeholder.svg';
+    }
+
+    // Get optimized image URL for different sizes
+    public function getOptimizedUrlAttribute()
+    {
+        return ImageHelper::getImageUrl($this->url);
     }
 
     // Get kategori label
@@ -111,5 +125,11 @@ class Gambar extends Model
         ];
         
         return $labels[$this->kategori] ?? $this->kategori;
+    }
+
+    // Get image info
+    public function getImageInfoAttribute()
+    {
+        return ImageHelper::getImageInfo($this->url);
     }
 } 

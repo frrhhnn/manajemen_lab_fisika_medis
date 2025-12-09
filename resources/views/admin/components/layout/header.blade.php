@@ -32,13 +32,13 @@
             </div>
             
             <!-- Logout Button -->
-            <form method="POST" action="{{ route('logout') }}" class="ml-2">
+            <form id="logout-form" method="POST" action="{{ route('logout') }}" class="ml-2" style="display: none;">
                 @csrf
-                <button type="submit" class="p-2 px-4 bg-red-500/90 rounded-lg text-white hover:bg-red-500 transition-all duration-200" title="Logout">
-                    <i class="fas fa-sign-out-alt text-lg"></i>
-                    Logout
-                </button>
             </form>
+            <button onclick="confirmLogout()" class="p-2 px-4 bg-red-500/90 rounded-lg text-white hover:bg-red-500 transition-all duration-200" title="Logout">
+                <i class="fas fa-sign-out-alt text-lg"></i>
+                Logout
+            </button>
         </div>
     </div>
 </header>

@@ -34,7 +34,7 @@
                     <div class="md:flex">
                         <!-- Equipment Image -->
                         <div class="md:w-1/2 relative overflow-hidden">
-                            <img src="{{ $alat->image_url ? asset('storage/' . $alat->image_url) : asset('images/facilities/default-alat.jpg') }}" alt="{{ $alat->nama }}" class="w-full h-64 md:h-full object-cover">
+                            <img src="{{ $alat->image_url }}" alt="{{ $alat->nama }}" class="w-full h-64 md:h-full object-cover">
                             <div class="absolute top-6 left-6">
                                 <span class="{{ $alat->jumlah_tersedia > 0 ? 'bg-emerald-500' : 'bg-red-500' }} text-white px-4 py-2 rounded-full font-bold">
                                     {{ $alat->jumlah_tersedia > 0 ? 'Tersedia' : 'Tidak Tersedia' }}
@@ -86,7 +86,7 @@
 
                             <!-- Action Button -->
                             @if($alat->jumlah_tersedia > 0)
-                                <button onclick="addToCartDetail('{{ $alat->id }}', '{{ $alat->nama }}', '{{ $alat->kode }}', '{{ $alat->image_url ? asset('storage/' . $alat->image_url) : asset('images/facilities/default-alat.jpg') }}', {{ $alat->jumlah_tersedia }})"
+                                <button onclick="addToCartDetail('{{ $alat->id }}', '{{ $alat->nama }}', '{{ $alat->kode }}', '{{ $alat->image_url }}', {{ $alat->jumlah_tersedia }})"
                                         class="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white py-4 rounded-xl font-semibold hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl">
                                     <i class="fas fa-cart-plus mr-2"></i>
                                     Tambah ke Keranjang

@@ -29,7 +29,17 @@ class KunjunganController extends Controller
                 'noHp' => 'required|string|max:20',
                 'namaInstansi' => 'required|string|max:255',
                 'tujuan' => 'required|string',
-                'tanggal' => 'required|date|after_or_equal:today',
+                'tanggal' => [
+                    'required',
+                    'date',
+                    'after_or_equal:today',
+                    function ($attribute, $value, $fail) {
+                        $dayOfWeek = \Carbon\Carbon::parse($value)->dayOfWeek;
+                        if ($dayOfWeek === 0) { // 0 = Sunday
+                            $fail('Kunjungan tidak dapat dilakukan pada hari Minggu. Silakan pilih hari lain.');
+                        }
+                    }
+                ],
                 'waktu_kunjungan' => 'required|string|regex:/^\d{2}:\d{2}-\d{2}:\d{2}$/',
                 'jumlahPengunjung' => 'required|integer|min:1|max:50',
                 'suratPengajuan' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048'
